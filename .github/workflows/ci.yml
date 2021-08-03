@@ -26,9 +26,21 @@ jobs:
       - run: npm test -- --coverage
         env:
           CI: true
+      - name: Upload Test Coverage
+        uses: actions/upload-artifacts@v1
+        with:
+          name: code-coverage
+          path: coverage
+        if: github.event_Name == 'push'
       - name: Build Project
         if: github.event_Name == 'push'
         run: npm run build
+      - name: Upload Build
+        uses: actions/upload-artifacts@v1
+        with:
+          name: build
+          path: build
+        if: github.event_Name == 'push'
       - name: Deploy to Staging
         if: github.event_Name == 'push'
         run: npx surge --project ./build --domain solid-cheese.surge.sh
