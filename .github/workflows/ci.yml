@@ -1,6 +1,9 @@
 name: CI
 on: 
-  pull_request
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
 
 jobs: 
   build: 
@@ -16,5 +19,13 @@ jobs:
       - run: npm test -- --coverage
         env:
           CI: true
-
+      - name: Build Project
+        if: github.event_Name == 'push'
+        run: npm run build
+      - name: Deploy to Staging
+        if: github.event_Name == 'push'
+        run: npx surge --project ./build --domain solid-cheese.surge.sh
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
 
