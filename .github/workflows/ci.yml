@@ -1,0 +1,55 @@
+name: CI
+on: 
+  pull_request:
+    branches: [develop, master]
+  push:
+    branches: [develop, master]
+
+jobs: 
+  build: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache node_modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Use NodeJS
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+      - run: npm ci
+      - run: npm run format:check 
+      - run: npm test -- --coverage
+        env:
+          CI: true
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v1
+        with:
+          name: code-coverage
+          path: coverage
+        if: github.event_Name == 'push'
+      - name: Build Project
+        if: github.event_Name == 'push'
+        run: npm run build
+      - name: Upload Build
+        uses: actions/upload-artifact@v1
+        with:
+          name: build
+          path: build
+        if: github.event_Name == 'push'
+      - name: Create a Release
+        if: github.event_Name == 'push' && github.ref == 'refs/heads/master'
+        run: npx semantic-release
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to Staging
+        if: github.event_Name == 'push'
+        run: npx surge --project ./build --domain solid-cheese.surge.sh
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+
