@@ -16,8 +16,8 @@ async function run() {
         
         const { data: response } = await octokit.rest.issues.create({
           ...github.context.repo,
-          title,
-          body,
+          title: 'Issue Title',
+          body: 'Issue Body',
           assignees: assignees ? assignees.split(',') : undefined
         });
     
