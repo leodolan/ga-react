@@ -14,7 +14,7 @@ async function run() {
     
         const octokit = new github.getOctokit(token);
         
-        const { data: response } = await octokit.rest.issues.create({
+        const response = await octokit.rest.issues.create({
           ...github.context.repo,
           title: 'Issue Title',
           body: 'Issue Body',
