@@ -1,13 +1,16 @@
 name: CI
 on: 
   pull_request:
-    branches: [develop, master]
+    branches: [develop11, master11]
   push:
-    branches: [develop, master]
+    branches: [develop11, master11]
 
 jobs: 
   build: 
     runs-on: ubuntu-latest
+    env:
+      SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+      SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - name: Cache node_modules
@@ -52,9 +55,31 @@ jobs:
         env: 
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy to Staging
-        if: github.event_Name == 'push'
+        if: github.event_Name == 'push' && github.ref == 'refs/heads/develop'
         run: npx surge --project ./build --domain solid-cheese.surge.sh
         env:
           SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+      - name: Deploy to Production
+        if: github.event_Name == 'push' && github.ref == 'refs/heads/master'
+        run: npx surge --project ./build --domain bustling-advertisement.surge.sh
+      - name: Upload Coverage Reports
+        if: github.event_Name == 'push' && github.ref == 'refs/heads/test'
+        run: npx code-cov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Open Issue
+        if: failure() && github.event_name == 'pull_request'
+        run: |
+            curl --request POST \
+            --url https://api.github.com/repos/${{ github.repository }}/issues \
+            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            --header 'content-type: application/json' \
+            --data '{
+              "title": "Automated issue for commit: ${{ github.sha }}",
+              "body": "This issue was automatically created by the GitHub Action workflow **${{ github.workflow }}**. \n\n The commit hash was: _${{ github.sha }}_.".
+
+              "assignees": ["${{ github.event.pull_request.user.login }}"]
+              }'
+
 
