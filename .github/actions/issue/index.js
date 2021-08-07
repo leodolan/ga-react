@@ -9,7 +9,7 @@ try{
 
     const octokit = new github.getOctokit(token);
     
-    const response = octokit.create.issues({
+    const response = octokit.rest.issues.create({
       ...github.context.repo,
       title,
       body,
